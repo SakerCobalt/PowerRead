@@ -86,7 +86,7 @@ def Average(l):
     return avg
 
 sampleTime = 5 #can be any factor of 60(1,2,3,4,5,6,10,12,15,20,30)
-minute,second = getCurrentTime()
+day,hour,minute,second = getCurrentTime()
 secondPast = second #Seconds from last timer execution
 minutePast = minute
 missingTime = 1 #Increment to 1,2,3,etc. if missing a time block
