@@ -45,19 +45,19 @@ def getPowerData():
         data.close()
         #print("Power A ",powera, "\n Power B ", powerb)
         power = powera + powerb
-        if power < 10:
-            print("Power Reading error",power)
-            getPowerData()
-        
         return power
     except:
-        data.close()
         traceback.print_exc()
-        time.sleep(1)
-        msgTotalPower()
+        return 0
 
 def msgTotalPower():
     power = getPowerData()
+    if power <= 0:
+        time.sleep(2)
+        power = getPowerData()
+    if power <=0:
+        time.sleep(2)
+        power = getPowerData()
     messageTP = ('"'+","+str(power)+","+'"')
     client.publish("ServerPi/TotalPower",messageTP)
     #global sampleTime
@@ -74,12 +74,12 @@ def msgEnergy(powerMax): #Energy used for the last 60 seconds
 def getCurrentTime():
     #timeNow = time.localtime()
     #year = time.localtime().tm_year
-    month = time.localtime().tm_mon
+    #month = time.localtime().tm_mon
     day = time.localtime().tm_mday
     hour = time.localtime().tm_hour
     minute = time.localtime().tm_min
     second = time.localtime().tm_sec
-    return minute,second
+    return day,hour,minute,second
 
 def Average(l):
     avg = sum(l)/len(l)
@@ -92,7 +92,7 @@ minutePast = minute
 missingTime = 1 #Increment to 1,2,3,etc. if missing a time block
 
 while True:
-    minute,second = getCurrentTime()
+    day,hour,minute,second = getCurrentTime()
     tmrTotalPower = second%sampleTime
     
     if tmrTotalPower == 0:
@@ -115,7 +115,7 @@ while True:
             powerMax = 0
         minutePast = minute
         if missingTime>1:
-            print("Missing Time ",missingTime,minute,second)
+            print("Missing Time ",missingTime,day,hour,minute,second)
     
     missimgTime =1
     
