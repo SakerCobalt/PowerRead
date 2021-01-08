@@ -43,12 +43,14 @@ def getPowerData():
         obj = json.loads(data.data.decode("utf-8"))
         powera = obj['data'][0][3]
         powerb = obj['data'][1][3]
-        data.close()
+        
         #print("Power A ",powera, "\n Power B ", powerb)
         power = powera + powerb
         return power
     except:
+        data.close()
         traceback.print_exc()
+        print("Data Connection Closed")
         return 0
 
 def msgTotalPower():
@@ -92,32 +94,37 @@ secondPast = second #Seconds from last timer execution
 minutePast = minute
 missingTime = 1 #Increment to 1,2,3,etc. if missing a time block
 
-while True:
-    day,hour,minute,second = getCurrentTime()
-    tmrTotalPower = second%sampleTime
-    
-    if tmrTotalPower == 0:
-        missingTime = ((minute-minutePast)*60+(second-secondPast))/sampleTime
-        power = msgTotalPower()
-        while power is None:
-            print("None Found")
-            time.sleep(1)
+try:
+    while True:
+        day,hour,minute,second = getCurrentTime()
+        tmrTotalPower = second%sampleTime
+        
+        if tmrTotalPower == 0:
+            missingTime = ((minute-minutePast)*60+(second-secondPast))/sampleTime
             power = msgTotalPower()
-            print("Power ",power)
-        secondPast = second
-        if powerMax < power:
-            powerMax = power
-        if missingTime <= 0:
-            print("missingTime less than zero, corrected")
-            missingTime = 1
-        energy += power*missingTime * sampleTime / 3600 #convert to Wh
-        if minute == (minutePast+1):
-            msgEnergy(powerMax)
-            powerMax = 0
-        minutePast = minute
-        if missingTime>1:
-            print("Missing Time ",missingTime,day,hour,minute,second)
+            if power is None:
+                print("None Found")
+                time.sleep(3)
+                power = msgTotalPower()
+                print("Power ",power)
+            secondPast = second
+            if powerMax < power:
+                powerMax = power
+            if missingTime <= 0:
+                print("missingTime less than zero, corrected")
+                missingTime = 1
+            energy += power*missingTime * sampleTime / 3600 #convert to Wh
+            if minute == (minutePast+1):
+                msgEnergy(powerMax)
+                powerMax = 0
+            minutePast = minute
+            if missingTime>1:
+                print("Missing Time ",missingTime,day,hour,minute,second)
+        
+        missimgTime =1
+        
+        time.sleep(1)
+except:
+    client.loop_stop()
+    print("MQTT loop closed")
     
-    missimgTime =1
-    
-    time.sleep(1)
