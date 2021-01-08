@@ -35,6 +35,7 @@ client.loop_start() #handles reconnecting.  Runs in separate thread to let main 
 #Get power from JSON query of MyEyeDro power monitor
 def getPowerData():
     try:
+        
         url = "http://192.168.50.20:8080/getdata"
         #timeout = Timeout(connect=10,read=10)
         http=urllib3.PoolManager()
