@@ -14,6 +14,7 @@ from timeloop import Timeloop
 from datetime import timedelta
 import paho.mqtt.client as mqtt
 import atexit
+import traceback
 
 
 tl = Timeloop()
@@ -30,47 +31,45 @@ client.connect(broker_address)
 client.loop_start() #handles reconnecting.  Runs in separate thread to let main thread run
 #client.loop_forever() #Stops main thread for mqtt loop
 #client.reinitialise()
-    
+
+
 
 #Get power from JSON query of MyEyeDro power monitor
 def getPowerData():
     try:
-        
         url = "http://192.168.50.20:8080/getdata"
-        #timeout = Timeout(connect=10,read=10)
-        http=urllib3.PoolManager()
+        #timeout = Timeout(connect=2.0,read=5.0)
+        http=urllib3.PoolManager(timeout=3.0)
         data = http.request('GET',url)
         obj = json.loads(data.data.decode("utf-8"))
         powera = obj['data'][0][3]
         powerb = obj['data'][1][3]
-        
-        #print("Power A ",powera, "\n Power B ", powerb)
+        data.close()
+        print("Power A ",powera, " Power B ", powerb)
         power = powera + powerb
         return power
     except:
-        data.close()
-        traceback.print_exc()
-        print("Data Connection Closed")
-        return 0
+        #tracebpowerack.print_exc()
+        print("Data Connection Failed")
+        return 500
 
 def msgTotalPower():
     power = getPowerData()
     if power <= 0:
         time.sleep(2)
         power = getPowerData()
-    if power <=0:
-        time.sleep(2)
-        power = getPowerData()
-    messageTP = ('"'+","+str(power)+","+'"')
-    client.publish("ServerPi/TotalPower",messageTP)
-    #global sampleTime
-    #print(sampleTime,power)
+    messageTP = (str(power))
+    try:
+        client.publish("ServerPi/TotalPower",messageTP)
+        print(power)
+    except:
+        print("MQTT error: ",power)
     return power
 
 def msgEnergy(powerMax): #Energy used for the last 60 seconds
     global energy
-    #print(round(energy,1), " Wh")
-    messageEnergy = ('"'+","+str(round(energy,1))+","+str(powerMax)+","+'"')
+    print(round(energy,1), " Wh")
+    messageEnergy = (str(round(energy,1))+","+str(powerMax))
     client.publish("ServerPi/Energy",messageEnergy)
     energy = 0
         
@@ -106,7 +105,7 @@ try:
                 print("None Found")
                 time.sleep(3)
                 power = msgTotalPower()
-                print("Power ",power)
+                #print("Power ",power)
             secondPast = second
             if powerMax < power:
                 powerMax = power
@@ -127,4 +126,5 @@ try:
 except:
     client.loop_stop()
     print("MQTT loop closed")
+    traceback.print_exc()
     
