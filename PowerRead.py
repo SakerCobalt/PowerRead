@@ -51,7 +51,7 @@ def getPowerData():
     except:
         #tracebpowerack.print_exc()
         print("Data Connection Failed")
-        return 500
+        return 1500
 
 def msgTotalPower():
     power = getPowerData()
